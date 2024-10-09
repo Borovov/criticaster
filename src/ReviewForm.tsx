@@ -1,9 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Form, Button } from 'react-bootstrap';
-import { ReviewData } from './ReviewData';
+import { ReviewData } from './type/ReviewData';
+import { saveReview } from './service/FormDataService';
+import { fetchCities, fetchRestaurants, fetchDishes } from './service/ComboboxService';
 
 interface ReviewFormProps {
-  onSubmit: (data: ReviewData) => void;
+  //onSubmit: (data: ReviewData) => void;
+  onSubmit?: () => void; // Опционально: можно добавить обработчик после успешной отправки
+
 }
 
 const ReviewForm: React.FC<ReviewFormProps> = ({ onSubmit }) => {
@@ -12,9 +16,72 @@ const ReviewForm: React.FC<ReviewFormProps> = ({ onSubmit }) => {
   const [dish, setDish] = useState<string>('');
   const [review, setReview] = useState<string>('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [cities, setCities] = useState<string[]>([]);
+  const [restaurants, setRestaurants] = useState<string[]>([]);
+  const [dishes, setDishes] = useState<string[]>([]);
+
+  // Загрузка городов при монтировании компонента
+  useEffect(() => {
+    const loadCities = async () => {
+      try {
+        const citiesData = await fetchCities();
+        setCities(citiesData);
+      } catch (error) {
+        console.error('Ошибка при загрузке городов:', error);
+      }
+    };
+    loadCities();
+  }, []);
+
+  // Загрузка ресторанов при изменении выбранного города
+  useEffect(() => {
+    if (city) {
+      const loadRestaurants = async () => {
+        try {
+          const restaurantsData = await fetchRestaurants(city);
+          setRestaurants(restaurantsData);
+          setRestaurant(''); // Сбросить выбранный ресторан при изменении города
+        } catch (error) {
+          console.error('Ошибка при загрузке ресторанов:', error);
+        }
+      };
+      loadRestaurants();
+    }
+  }, [city]);
+
+  // Загрузка блюд при изменении выбранного ресторана
+  useEffect(() => {
+    if (restaurant) {
+      const loadDishes = async () => {
+        try {
+          const dishesData = await fetchDishes(restaurant);
+          setDishes(dishesData);
+          setDish(''); // Сбросить выбранное блюдо при изменении ресторана
+        } catch (error) {
+          console.error('Ошибка при загрузке блюд:', error);
+        }
+      };
+      loadDishes();
+    }
+  }, [restaurant]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit({ city, restaurant, dish, review });
+
+    const reviewData: ReviewData = {
+      city,
+      restaurant,
+      dish,
+      review,
+    };
+
+    // Сохраняем отзыв с помощью функции из сервиса
+    await saveReview(reviewData);
+
+    // Вызовем callback, если передан
+    if (onSubmit) {
+      onSubmit();
+    }
   };
 
   return (
@@ -24,34 +91,37 @@ const ReviewForm: React.FC<ReviewFormProps> = ({ onSubmit }) => {
         <Form.Label>Выберите город</Form.Label>
         <Form.Select value={city} onChange={(e) => setCity(e.target.value)} required>
           <option value="">Выберите...</option>
-          <option value="Москва">Москва</option>
-          <option value="Санкт-Петербург">Санкт-Петербург</option>
-          <option value="Новосибирск">Новосибирск</option>
-          {/* Добавьте другие города */}
+          {cities.map((cityName) => (
+            <option key={cityName} value={cityName}>
+              {cityName}
+            </option>
+          ))}
         </Form.Select>
       </Form.Group>
 
       {/* Поле выбора ресторана */}
       <Form.Group controlId="formRestaurant" className="mb-3">
         <Form.Label>Выберите ресторан</Form.Label>
-        <Form.Select value={restaurant} onChange={(e) => setRestaurant(e.target.value)} required>
+        <Form.Select value={restaurant} onChange={(e) => setRestaurant(e.target.value)} required disabled={!city}>
           <option value="">Выберите...</option>
-          <option value="Ресторан 1">Ресторан 1</option>
-          <option value="Ресторан 2">Ресторан 2</option>
-          <option value="Ресторан 3">Ресторан 3</option>
-          {/* Добавьте другие рестораны */}
+          {restaurants.map((restaurantName) => (
+            <option key={restaurantName} value={restaurantName}>
+              {restaurantName}
+            </option>
+          ))}
         </Form.Select>
       </Form.Group>
 
       {/* Поле выбора блюда */}
       <Form.Group controlId="formDish" className="mb-3">
         <Form.Label>Выберите блюдо</Form.Label>
-        <Form.Select value={dish} onChange={(e) => setDish(e.target.value)} required>
+        <Form.Select value={dish} onChange={(e) => setDish(e.target.value)} required disabled={!restaurant}>
           <option value="">Выберите...</option>
-          <option value="Блюдо 1">Блюдо 1</option>
-          <option value="Блюдо 2">Блюдо 2</option>
-          <option value="Блюдо 3">Блюдо 3</option>
-          {/* Добавьте другие блюда */}
+          {dishes.map((dishName) => (
+            <option key={dishName} value={dishName}>
+              {dishName}
+            </option>
+          ))}
         </Form.Select>
       </Form.Group>
 
@@ -60,7 +130,7 @@ const ReviewForm: React.FC<ReviewFormProps> = ({ onSubmit }) => {
         <Form.Label>Напишите отзыв</Form.Label>
         <Form.Control
           as="textarea"
-          rows={5}
+          rows={3}
           value={review}
           onChange={(e) => setReview(e.target.value)}
           placeholder="Ваш отзыв..."

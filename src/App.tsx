@@ -1,25 +1,16 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import { Container, Row, Col } from 'react-bootstrap';
+import ReviewForm from './ReviewForm';
 
 function App() {
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <Container fluid className="d-flex min-vh-100 justify-content-center align-items-center">
+      <Row className="w-100">
+        <Col xs={12} md={6} lg={4} className="mx-auto">
+          <ReviewForm />
+        </Col>
+      </Row>
+    </Container>
   );
 }
 
