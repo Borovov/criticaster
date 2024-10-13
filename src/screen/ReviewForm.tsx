@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Form, Button } from 'react-bootstrap';
-import { ReviewData } from './type/ReviewData';
-import { saveReview } from './service/FormDataService';
-import { fetchCities, fetchRestaurants, fetchDishes } from './service/ComboboxService';
+import { ReviewData } from '../type/ReviewData';
+import { saveReview } from '../service/FormDataService';
+import { fetchCities, fetchRestaurants, fetchDishes } from '../service/ComboboxService';
 
 interface ReviewFormProps {
   //onSubmit: (data: ReviewData) => void;
